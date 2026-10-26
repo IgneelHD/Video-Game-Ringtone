@@ -122,3 +122,18 @@
   .admin__actions { width: 100%; }
   .admin__actions .btn--primary { margin-left: auto; }
 }
+
+.account {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 16px; padding: 16px 20px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.account h2 { margin: 0; font-size: 17px; }
+.account__fields { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 12px; align-items: end; }
+.account .admin__msg { margin: 0; }
+.signin form { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.signin .check { margin: 0; }
+.signin__switch { text-align: center; }
+@media (max-width: 760px) {
+  .account__fields { grid-template-columns: 1fr; }
+}

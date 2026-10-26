@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import SoundCard from '../components/SoundCard.jsx'
 import { MoonIcon, SearchIcon, SunIcon } from '../components/Icons.jsx'
 import { fileUrl, modeOf } from '../data/sounds.js'
-import { GitHub, OWNER, REPO, UPLOAD_DIR } from './github.js'
+import { GitHub, OWNER, REPO } from './github.js'
+import { fetchVault, lockToken, passwordProblem, unlockToken } from './vault.js'
 
 const TOKEN_KEY = 'gt-admin-token'
+const VAULT_PATH = 'public/admin-key.json'
 const MAX_UPLOAD = 15 * 1024 * 1024
 const MODES = [
   { id: 'file', label: 'Upload file' },
@@ -16,6 +18,19 @@ const DEFAULT_TONES = { Ringtone: '#5b5bf0', Notification: '#0f9d74', Alarm: '#e
 const storage = {
   get: (k) => { try { return localStorage.getItem(k) } catch { return null } },
   set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v) } catch {} },
+}
+
+// The unlocked token lives for the browser tab, or on the device if "keep me signed in".
+const tokenStore = {
+  get: () => { try { return sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || '' } catch { return '' } },
+  set: (t, keep) => {
+    try {
+      sessionStorage.setItem(TOKEN_KEY, t)
+      keep ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY)
+    } catch {}
+  },
+  kept: () => { try { return !!localStorage.getItem(TOKEN_KEY) } catch { return false } },
+  clear: () => { try { sessionStorage.removeItem(TOKEN_KEY); localStorage.removeItem(TOKEN_KEY) } catch {} },
 }
 
 const slug = (s) => s.toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 40) || 'sound'
@@ -51,7 +66,10 @@ const audioDuration = (url) =>
 
 export default function Admin() {
   const [theme, setTheme] = useState(() => storage.get('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
-  const [token, setToken] = useState(() => storage.get(TOKEN_KEY) || '')
+  const [token, setToken] = useState(tokenStore.get)
+  const [vault, setVault] = useState(undefined) // undefined while loading, null when no login is set up
+  const [needsSetup, setNeedsSetup] = useState(false)
+  const [account, setAccount] = useState(false)
   const [session, setSession] = useState(null) // { branch, dataSha }
   const [data, setData] = useState(null)
   const [savedJson, setSavedJson] = useState('')
@@ -80,38 +98,102 @@ export default function Admin() {
     return () => removeEventListener('beforeunload', warn)
   }, [dirty])
 
-  const load = async (t = token, remember = true) => {
-    setBusy('Loading sounds from GitHub…')
+  const enter = (t, result, keep) => {
+    tokenStore.set(t, keep)
+    setToken(t)
+    setSession({ branch: result.branch, dataSha: result.dataSha })
+    setData(result.data)
+    setSavedJson(JSON.stringify(result.data))
+    setUploads({})
+    setSelectedId((id) => (result.data.sounds.some((s) => s.id === id) ? id : result.data.sounds[0]?.id ?? null))
+  }
+
+  const tokenFailed = (e) => {
+    if (e.status === 401 || e.status === 403 || e.status === 404) {
+      tokenStore.clear()
+      setNeedsSetup(true)
+      setError('The saved GitHub token has expired or lost access to the repository. Set up the login again with a new token.')
+    } else {
+      setError(e.message)
+    }
+  }
+
+  const login = async (username, password, keep) => {
+    setBusy('Signing in…')
     setError('')
     try {
-      const result = await new GitHub(t).load()
-      if (remember) storage.set(TOKEN_KEY, t)
-      setToken(t)
-      setSession({ branch: result.branch, dataSha: result.dataSha })
-      setData(result.data)
-      setSavedJson(JSON.stringify(result.data))
-      setUploads({})
-      setSelectedId((id) => (result.data.sounds.some((s) => s.id === id) ? id : result.data.sounds[0]?.id ?? null))
+      const t = await unlockToken(vault, username, password)
+      setBusy('Loading sounds…')
+      try {
+        enter(t, await new GitHub(t).load(), keep)
+      } catch (e) {
+        tokenFailed(e)
+      }
     } catch (e) {
       setError(e.message)
-      if (e.status === 401) storage.set(TOKEN_KEY, null)
     } finally {
       setBusy('')
     }
   }
 
-  useEffect(() => { if (token) load(token) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const setup = async (t, username, password, keep) => {
+    setBusy('Checking the token…')
+    setError('')
+    try {
+      const github = new GitHub(t)
+      const result = await github.load()
+      setBusy('Saving your login…')
+      const next = await lockToken(username, password, t)
+      await github.putFile(result.branch, VAULT_PATH, JSON.stringify(next, null, 2) + '\n', 'Set admin login')
+      setVault(next)
+      setNeedsSetup(false)
+      enter(t, result, keep)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const changeLogin = async (username, password) => {
+    const next = await lockToken(username, password, token)
+    await gh.putFile(session.branch, VAULT_PATH, JSON.stringify(next, null, 2) + '\n', 'Change admin login')
+    setVault(next)
+  }
+
+  useEffect(() => {
+    fetchVault().then(setVault)
+    const t = tokenStore.get()
+    if (!t) return
+    setBusy('Loading sounds…')
+    new GitHub(t).load()
+      .then((result) => enter(t, result, tokenStore.kept()))
+      .catch(tokenFailed)
+      .finally(() => setBusy(''))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const signOut = () => {
     if (dirty && !confirm('Discard unsaved changes and sign out?')) return
-    storage.set(TOKEN_KEY, null)
+    tokenStore.clear()
     setToken('')
     setSession(null)
     setData(null)
+    setAccount(false)
   }
 
   if (!session || !data) {
-    return <SignIn theme={theme} setTheme={setTheme} busy={busy} error={error} onSubmit={load} initialToken={token} />
+    return (
+      <SignIn
+        theme={theme}
+        setTheme={setTheme}
+        busy={busy}
+        error={error}
+        vault={vault}
+        needsSetup={needsSetup}
+        onLogin={login}
+        onSetup={setup}
+      />
+    )
   }
 
   const sounds = data.sounds
@@ -230,6 +312,7 @@ export default function Admin() {
           <button className="icon-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle dark mode">
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
+          <button className="btn btn--ghost" onClick={() => setAccount((a) => !a)} aria-expanded={account}>Account</button>
           <button className="btn btn--ghost" onClick={signOut}>Sign out</button>
           <button className="btn btn--primary" onClick={save} disabled={!dirty || !!busy}>
             {busy ? 'Saving…' : dirty ? 'Save & publish' : 'Saved'}
@@ -239,6 +322,7 @@ export default function Admin() {
 
       {error && <p className="admin__msg admin__msg--error" role="alert">{error}</p>}
       {notice && <DeployNotice notice={notice} onClose={() => setNotice(null)} />}
+      {account && <AccountPanel onSave={changeLogin} onClose={() => setAccount(false)} />}
 
       <div className="admin__layout">
         <aside className="admin__list">
@@ -467,9 +551,70 @@ function DeployNotice({ notice, onClose }) {
   )
 }
 
-function SignIn({ theme, setTheme, busy, error, onSubmit, initialToken }) {
-  const [value, setValue] = useState(initialToken)
-  const [remember, setRemember] = useState(true)
+function AccountPanel({ onSave, onClose }) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [state, setState] = useState({ busy: false, error: '', done: false })
+  const submit = async (e) => {
+    e.preventDefault()
+    const problem = passwordProblem(username, password, confirmPw)
+    if (problem) return setState({ busy: false, error: problem, done: false })
+    setState({ busy: true, error: '', done: false })
+    try {
+      await onSave(username, password)
+      setPassword('')
+      setConfirmPw('')
+      setState({ busy: false, error: '', done: true })
+    } catch (err) {
+      setState({ busy: false, error: err.message, done: false })
+    }
+  }
+  return (
+    <form className="account" onSubmit={submit}>
+      <div className="editor__head">
+        <h2>Change username &amp; password</h2>
+        <button type="button" className="link-btn" onClick={onClose} aria-label="Close">✕</button>
+      </div>
+      <p className="hint">Other devices pick up the new login after the site republishes (about a minute).</p>
+      <div className="account__fields">
+        <Field label="New username">
+          <input autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+        </Field>
+        <Field label="New password">
+          <input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        <Field label="Confirm password">
+          <input type="password" autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+        </Field>
+        <button className="btn btn--primary" disabled={state.busy}>{state.busy ? 'Saving…' : 'Save login'}</button>
+      </div>
+      {state.error && <p className="admin__msg admin__msg--error" role="alert">{state.error}</p>}
+      {state.done && <p className="admin__msg admin__msg--ok" role="status">Login updated.</p>}
+    </form>
+  )
+}
+
+function SignIn({ theme, setTheme, busy, error, vault, needsSetup, onLogin, onSetup }) {
+  const [mode, setMode] = useState(null) // null = pick automatically
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [token, setToken] = useState('')
+  const [keep, setKeep] = useState(false)
+  const [problem, setProblem] = useState('')
+  const current = mode || (needsSetup || vault === null ? 'setup' : 'login')
+
+  const submit = (e) => {
+    e.preventDefault()
+    setProblem('')
+    if (current === 'login') return onLogin(username, password, keep)
+    const p = passwordProblem(username, password, confirmPw)
+    if (p) return setProblem(p)
+    if (!token.trim()) return setProblem('Paste the GitHub token.')
+    onSetup(token.trim(), username, password, keep)
+  }
+
   return (
     <div className="signin">
       <div className="signin__card">
@@ -480,36 +625,85 @@ function SignIn({ theme, setTheme, busy, error, onSubmit, initialToken }) {
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
         </div>
-        <h1>Sign in with GitHub</h1>
-        <p className="hint">
-          Changes are saved straight to the <b>{OWNER}/{REPO}</b> repository, and the site republishes itself. Paste a GitHub token that can
-          write to it. Only you, and anyone you give the token to, can make changes.
-        </p>
-        <ol className="hint signin__steps">
-          <li>
-            Open{' '}
-            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
-              new fine-grained token
-            </a>
-            .
-          </li>
-          <li>Repository access: <b>Only select repositories</b> → {REPO}.</li>
-          <li>Permissions: <b>Contents: Read and write</b> (optionally <b>Actions: Read</b> to see publish status).</li>
-          <li>Generate, copy and paste it below.</li>
-        </ol>
-        <form onSubmit={(e) => { e.preventDefault(); if (value.trim()) onSubmit(value.trim(), remember) }}>
-          <Field label="GitHub token">
-            <input type="password" autoComplete="off" placeholder="github_pat_…" value={value} onChange={(e) => setValue(e.target.value)} />
-          </Field>
-          <label className="check">
-            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-            Remember on this device
-          </label>
-          {error && <p className="admin__msg admin__msg--error" role="alert">{error}</p>}
-          <button className="btn btn--primary btn--block" disabled={!value.trim() || !!busy}>
-            {busy || 'Sign in'}
-          </button>
-        </form>
+
+        {vault === undefined && !busy ? (
+          <p className="hint" style={{ marginTop: 24 }}>Loading…</p>
+        ) : current === 'login' ? (
+          <>
+            <h1>Sign in</h1>
+            <p className="hint">Enter your admin username and password.</p>
+          </>
+        ) : (
+          <>
+            <h1>Set up your login</h1>
+            <p className="hint">
+              One-time setup. Changes are saved to the <b>{OWNER}/{REPO}</b> repository, which needs a GitHub token. Paste it once here and
+              choose a username and password. The token is stored encrypted with your password, so from then on you only need those.
+            </p>
+            <ol className="hint signin__steps">
+              <li>
+                Open{' '}
+                <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">
+                  new fine-grained token
+                </a>
+                . Set expiration to the longest you're comfortable with.
+              </li>
+              <li>Repository access: <b>Only select repositories</b> → {REPO}.</li>
+              <li>Permissions: <b>Contents: Read and write</b> (optionally <b>Actions: Read</b> to see publish status).</li>
+              <li>Generate, copy and paste it below.</li>
+            </ol>
+          </>
+        )}
+
+        {(vault !== undefined || busy) && (
+          <form onSubmit={submit}>
+            {current === 'setup' && (
+              <Field label="GitHub token">
+                <input type="password" autoComplete="off" placeholder="github_pat_…" value={token} onChange={(e) => setToken(e.target.value)} />
+              </Field>
+            )}
+            <Field label="Username">
+              <input autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+            </Field>
+            <Field label="Password">
+              <input
+                type="password"
+                autoComplete={current === 'login' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Field>
+            {current === 'setup' && (
+              <>
+                <Field label="Confirm password">
+                  <input type="password" autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+                </Field>
+                <p className="hint">At least 10 characters. Use a strong, unique password: the encrypted key file is public.</p>
+              </>
+            )}
+            <label className="check">
+              <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
+              Keep me signed in on this device
+            </label>
+            {(problem || error) && <p className="admin__msg admin__msg--error" role="alert">{problem || error}</p>}
+            <button className="btn btn--primary btn--block" disabled={!!busy || !username || !password}>
+              {busy || (current === 'login' ? 'Sign in' : 'Save login & sign in')}
+            </button>
+            {vault && (
+              <p className="hint signin__switch">
+                {current === 'login' ? (
+                  <button type="button" className="link-btn" onClick={() => { setMode('setup'); setProblem('') }}>
+                    Forgot your password or token expired? Set up again
+                  </button>
+                ) : (
+                  <button type="button" className="link-btn" onClick={() => { setMode('login'); setProblem('') }}>
+                    Back to sign in
+                  </button>
+                )}
+              </p>
+            )}
+          </form>
+        )}
       </div>
     </div>
   )
