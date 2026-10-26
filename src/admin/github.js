@@ -81,18 +81,6 @@ export class GitHub {
     return { commit: commit.sha, dataSha: saved.sha }
   }
 
-  // Creates or replaces one text file in a single commit.
-  async putFile(branch, path, text, message) {
-    let sha
-    try {
-      sha = (await this.request(`/contents/${path}?ref=${encodeURIComponent(branch)}`)).sha
-    } catch (e) {
-      if (e.status !== 404) throw e
-    }
-    const bytes = new TextEncoder().encode(text)
-    await this.request(`/contents/${path}`, { method: 'PUT', body: { message, content: toBase64(bytes), branch, sha } })
-  }
-
   // Latest Pages deploy for a commit; needs "Actions: Read" on the token, so failures are ignored.
   async deployStatus(sha) {
     try {

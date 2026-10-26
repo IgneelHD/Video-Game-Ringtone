@@ -24,11 +24,11 @@ npm run sounds    # regenerate the original tones (needs ffmpeg for MP3)
 
 Open `admin.html` on the live site (https://igneelhd.github.io/Video-Game-Ringtone/admin.html).
 
-**First time:** create a fine-grained GitHub token with **Contents: Read and write** on this repository
-(optionally **Actions: Read** to see publish status), paste it once, and choose a username and password.
-The token is encrypted in the browser (AES-GCM, key from PBKDF2-SHA256 with 600k rounds) and saved as
-`public/admin-key.json`. After that, sign in with just your username and password. That file is public,
-so use a strong, unique password. When the token expires, use "Set up again" with a new token.
+**First time on a device:** create a fine-grained GitHub token with **Contents: Read and write** on this
+repository (optionally **Actions: Read** to see publish status), paste it once, and choose a username and
+password. The token is encrypted in the browser (AES-GCM, key from PBKDF2-SHA256 with 600k rounds) and kept
+only in that browser's localStorage. It is never uploaded. After that, sign in with just your username and
+password. On another device, do the one-time setup there too. When the token expires, use "Set up again".
 
 From there you can:
 

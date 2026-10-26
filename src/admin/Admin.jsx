@@ -3,10 +3,9 @@ import SoundCard from '../components/SoundCard.jsx'
 import { MoonIcon, SearchIcon, SunIcon } from '../components/Icons.jsx'
 import { fileUrl, modeOf } from '../data/sounds.js'
 import { GitHub, OWNER, REPO } from './github.js'
-import { fetchVault, lockToken, passwordProblem, unlockToken } from './vault.js'
+import { loadVault, lockToken, passwordProblem, saveVault, unlockToken } from './vault.js'
 
 const TOKEN_KEY = 'gt-admin-token'
-const VAULT_PATH = 'public/admin-key.json'
 const MAX_UPLOAD = 15 * 1024 * 1024
 const MODES = [
   { id: 'file', label: 'Upload file' },
@@ -67,7 +66,7 @@ const audioDuration = (url) =>
 export default function Admin() {
   const [theme, setTheme] = useState(() => storage.get('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))
   const [token, setToken] = useState(tokenStore.get)
-  const [vault, setVault] = useState(undefined) // undefined while loading, null when no login is set up
+  const [vault, setVault] = useState(loadVault) // null when no login is set up on this device
   const [needsSetup, setNeedsSetup] = useState(false)
   const [account, setAccount] = useState(false)
   const [session, setSession] = useState(null) // { branch, dataSha }
@@ -142,9 +141,8 @@ export default function Admin() {
     try {
       const github = new GitHub(t)
       const result = await github.load()
-      setBusy('Saving your login…')
       const next = await lockToken(username, password, t)
-      await github.putFile(result.branch, VAULT_PATH, JSON.stringify(next, null, 2) + '\n', 'Set admin login')
+      saveVault(next)
       setVault(next)
       setNeedsSetup(false)
       enter(t, result, keep)
@@ -157,12 +155,11 @@ export default function Admin() {
 
   const changeLogin = async (username, password) => {
     const next = await lockToken(username, password, token)
-    await gh.putFile(session.branch, VAULT_PATH, JSON.stringify(next, null, 2) + '\n', 'Change admin login')
+    saveVault(next)
     setVault(next)
   }
 
   useEffect(() => {
-    fetchVault().then(setVault)
     const t = tokenStore.get()
     if (!t) return
     setBusy('Loading sounds…')
@@ -576,7 +573,7 @@ function AccountPanel({ onSave, onClose }) {
         <h2>Change username &amp; password</h2>
         <button type="button" className="link-btn" onClick={onClose} aria-label="Close">✕</button>
       </div>
-      <p className="hint">Other devices pick up the new login after the site republishes (about a minute).</p>
+      <p className="hint">Changes the login on this device. Other devices keep their own login.</p>
       <div className="account__fields">
         <Field label="New username">
           <input autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -626,9 +623,7 @@ function SignIn({ theme, setTheme, busy, error, vault, needsSetup, onLogin, onSe
           </button>
         </div>
 
-        {vault === undefined && !busy ? (
-          <p className="hint" style={{ marginTop: 24 }}>Loading…</p>
-        ) : current === 'login' ? (
+        {current === 'login' ? (
           <>
             <h1>Sign in</h1>
             <p className="hint">Enter your admin username and password.</p>
@@ -637,8 +632,9 @@ function SignIn({ theme, setTheme, busy, error, vault, needsSetup, onLogin, onSe
           <>
             <h1>Set up your login</h1>
             <p className="hint">
-              One-time setup. Changes are saved to the <b>{OWNER}/{REPO}</b> repository, which needs a GitHub token. Paste it once here and
-              choose a username and password. The token is stored encrypted with your password, so from then on you only need those.
+              One-time setup on this device. Changes are saved to the <b>{OWNER}/{REPO}</b> repository, which needs a GitHub token. Paste it
+              once and choose a username and password. The token is encrypted with your password and kept only in this browser. It is never
+              uploaded. On another device, set up once there too.
             </p>
             <ol className="hint signin__steps">
               <li>
@@ -655,55 +651,53 @@ function SignIn({ theme, setTheme, busy, error, vault, needsSetup, onLogin, onSe
           </>
         )}
 
-        {(vault !== undefined || busy) && (
-          <form onSubmit={submit}>
-            {current === 'setup' && (
-              <Field label="GitHub token">
-                <input type="password" autoComplete="off" placeholder="github_pat_…" value={token} onChange={(e) => setToken(e.target.value)} />
+        <form onSubmit={submit}>
+          {current === 'setup' && (
+            <Field label="GitHub token">
+              <input type="password" autoComplete="off" placeholder="github_pat_…" value={token} onChange={(e) => setToken(e.target.value)} />
+            </Field>
+          )}
+          <Field label="Username">
+            <input autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+          </Field>
+          <Field label="Password">
+            <input
+              type="password"
+              autoComplete={current === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </Field>
+          {current === 'setup' && (
+            <>
+              <Field label="Confirm password">
+                <input type="password" autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
               </Field>
-            )}
-            <Field label="Username">
-              <input autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
-            </Field>
-            <Field label="Password">
-              <input
-                type="password"
-                autoComplete={current === 'login' ? 'current-password' : 'new-password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </Field>
-            {current === 'setup' && (
-              <>
-                <Field label="Confirm password">
-                  <input type="password" autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
-                </Field>
-                <p className="hint">At least 10 characters. Use a strong, unique password: the encrypted key file is public.</p>
-              </>
-            )}
-            <label className="check">
-              <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
-              Keep me signed in on this device
-            </label>
-            {(problem || error) && <p className="admin__msg admin__msg--error" role="alert">{problem || error}</p>}
-            <button className="btn btn--primary btn--block" disabled={!!busy || !username || !password}>
-              {busy || (current === 'login' ? 'Sign in' : 'Save login & sign in')}
-            </button>
-            {vault && (
-              <p className="hint signin__switch">
-                {current === 'login' ? (
-                  <button type="button" className="link-btn" onClick={() => { setMode('setup'); setProblem('') }}>
-                    Forgot your password or token expired? Set up again
-                  </button>
-                ) : (
-                  <button type="button" className="link-btn" onClick={() => { setMode('login'); setProblem('') }}>
-                    Back to sign in
-                  </button>
-                )}
-              </p>
-            )}
-          </form>
-        )}
+              <p className="hint">At least 8 characters.</p>
+            </>
+          )}
+          <label className="check">
+            <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
+            Keep me signed in on this device
+          </label>
+          {(problem || error) && <p className="admin__msg admin__msg--error" role="alert">{problem || error}</p>}
+          <button className="btn btn--primary btn--block" disabled={!!busy || !username || !password}>
+            {busy || (current === 'login' ? 'Sign in' : 'Save login & sign in')}
+          </button>
+          {vault && (
+            <p className="hint signin__switch">
+              {current === 'login' ? (
+                <button type="button" className="link-btn" onClick={() => { setMode('setup'); setProblem('') }}>
+                  Forgot your password or token expired? Set up again
+                </button>
+              ) : (
+                <button type="button" className="link-btn" onClick={() => { setMode('login'); setProblem('') }}>
+                  Back to sign in
+                </button>
+              )}
+            </p>
+          )}
+        </form>
       </div>
     </div>
   )

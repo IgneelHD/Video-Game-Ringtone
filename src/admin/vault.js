@@ -1,7 +1,6 @@
-// Keeps the GitHub token encrypted with the admin's username + password, so
-// signing in only needs those. The encrypted file (public/admin-key.json) is
-// public, so the password must be strong: PBKDF2 slows down guessing, but
-// cannot save a weak password.
+// Keeps the GitHub token encrypted with the admin's username + password in this
+// browser's localStorage only — it is never uploaded anywhere. Signing in on a
+// new device means pasting the token once there.
 
 const ITERATIONS = 600000
 const enc = new TextEncoder()
@@ -38,20 +37,28 @@ export async function unlockToken(vault, username, password) {
   }
 }
 
-export async function fetchVault() {
+const VAULT_KEY = 'gt-admin-vault'
+
+export function loadVault() {
   try {
-    const r = await fetch(`./admin-key.json?t=${Date.now()}`, { cache: 'no-store' })
-    if (!r.ok) return null
-    const vault = await r.json()
+    const vault = JSON.parse(localStorage.getItem(VAULT_KEY))
     return vault?.data && vault?.salt && vault?.iv ? vault : null
   } catch {
     return null
   }
 }
 
+export function saveVault(vault) {
+  try {
+    localStorage.setItem(VAULT_KEY, JSON.stringify(vault))
+  } catch {
+    throw new Error('This browser blocks saving data (private mode?), so the login cannot be remembered here.')
+  }
+}
+
 export function passwordProblem(username, password, confirm) {
   if (username.trim().length < 3) return 'Username must be at least 3 characters.'
-  if (password.length < 10) return 'Password must be at least 10 characters. Longer is safer, since the encrypted key file is public.'
+  if (password.length < 8) return 'Password must be at least 8 characters.'
   if (password.toLowerCase().includes(username.trim().toLowerCase())) return 'Password must not contain the username.'
   if (password !== confirm) return 'Passwords do not match.'
   return ''
