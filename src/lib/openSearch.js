@@ -4,7 +4,10 @@
 //  - Wikimedia Commons
 //  - Internet Archive
 // Popular sites without such an API are offered as "search there" links.
+// Only clips up to MAX_SECONDS are kept: podcasts and albums make poor ringtones.
 import { archiveCandidates, commonsCandidates } from './freeAudio.js'
+
+export const MAX_SECONDS = 60
 
 const OPENVERSE_SOURCES = {
   freesound: 'Freesound',
@@ -44,7 +47,7 @@ const licenseLabel = (code, version) =>
 async function openverse(q, signal) {
   const u = new URL('https://api.openverse.org/v1/audio/')
   u.searchParams.set('q', q)
-  u.searchParams.set('page_size', '20')
+  u.searchParams.set('page_size', '40')
   const data = await getJson(u.href, signal)
   return (data.results || [])
     .filter((r) => r.url)
@@ -63,7 +66,7 @@ async function openverse(q, signal) {
 async function commons(q, signal) {
   const u = new URL('https://commons.wikimedia.org/w/api.php')
   Object.entries({
-    action: 'query', generator: 'search', gsrsearch: `${q} filetype:audio`, gsrnamespace: '6', gsrlimit: '12',
+    action: 'query', generator: 'search', gsrsearch: `${q} filetype:audio`, gsrnamespace: '6', gsrlimit: '25',
     prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', format: 'json', origin: '*',
   }).forEach(([k, v]) => u.searchParams.set(k, v))
   return commonsCandidates(await getJson(u.href, signal))
@@ -73,17 +76,23 @@ async function archive(q, signal) {
   const u = new URL('https://archive.org/advancedsearch.php')
   u.searchParams.set('q', `(${q}) AND mediatype:audio AND licenseurl:*`)
   u.searchParams.set('output', 'json')
-  u.searchParams.set('rows', '6')
+  u.searchParams.set('rows', '10')
   u.searchParams.append('fl[]', 'identifier')
   const docs = ((await getJson(u.href, signal)).response?.docs || []).filter((d) => /^[\w.-]+$/.test(d.identifier))
   const items = await Promise.allSettled(docs.map((d) => getJson(`https://archive.org/metadata/${d.identifier}`, signal).then((m) => archiveCandidates(d.identifier, m))))
-  // Albums can hold dozens of files; keep the first two per item, MP3 first.
+  // Albums can hold dozens of files; keep the first two short ones per item, MP3 first.
   return items.flatMap((r) =>
     r.status === 'fulfilled'
-      ? r.value.sort((a, b) => Number(/\.mp3$/i.test(b.file)) - Number(/\.mp3$/i.test(a.file))).slice(0, 2)
+      ? r.value
+          .filter(isShort)
+          .sort((a, b) => Number(/\.mp3$/i.test(b.file)) - Number(/\.mp3$/i.test(a.file)))
+          .slice(0, 2)
       : [],
   )
 }
+
+// Unknown lengths are dropped too: they are mostly long archive recordings.
+const isShort = (r) => r.duration > 0 && r.duration <= MAX_SECONDS
 
 const SEARCHERS = { Openverse: openverse, 'Wikimedia Commons': commons, 'Internet Archive': archive }
 
@@ -93,7 +102,7 @@ export async function searchOpenSources(query, signal) {
   const settled = await Promise.allSettled(names.map((n) => SEARCHERS[n](query, signal)))
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
   const failed = names.filter((_, i) => settled[i].status === 'rejected')
-  const lists = settled.map((r) => (r.status === 'fulfilled' ? r.value : []))
+  const lists = settled.map((r) => (r.status === 'fulfilled' ? r.value.filter(isShort) : []))
   const seen = new Set()
   const results = []
   for (let i = 0; lists.some((l) => i < l.length); i++) {

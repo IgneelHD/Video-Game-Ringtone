@@ -11,6 +11,9 @@ const plain = (s) =>
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
 
+// Archive lengths come as seconds ("83.5") or clock time ("1:23", "1:02:03").
+export const seconds = (v) => String(v || '').split(':').reduce((t, part) => t * 60 + (Number(part) || 0), 0)
+
 export const normalize = (s) =>
   String(s).toLowerCase().normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '')
 
@@ -67,7 +70,7 @@ export function archiveCandidates(id, data) {
       url: `https://archive.org/download/${encodeURIComponent(id)}/${f.name.split('/').map(encodeURIComponent).join('/')}`,
       page: `https://archive.org/details/${encodeURIComponent(id)}`,
       creator: plain(f.creator || meta.creator),
-      duration: Number(f.length) || 0,
+      duration: seconds(f.length),
       license: licenseName(licenseUrl),
     }))
 }

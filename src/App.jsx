@@ -3,7 +3,7 @@ import { useAudioPlayer } from './lib/useAudioPlayer.js'
 import SoundCard from './components/SoundCard.jsx'
 import { MoonIcon, SearchIcon, SunIcon } from './components/Icons.jsx'
 import { CATEGORIES, SOUNDS } from './data/sounds.js'
-import { EXTERNAL_SITES, searchOpenSources } from './lib/openSearch.js'
+import { EXTERNAL_SITES, MAX_SECONDS, searchOpenSources } from './lib/openSearch.js'
 
 const SOURCES = [
   { id: 'all', label: 'All sounds' },
@@ -181,7 +181,7 @@ function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
         <h2 id="open-results-title">From open sources</h2>
         <p className="count">
           {status === 'loading' ? 'Searching Openverse (Freesound, Jamendo, ccMixter…), Wikimedia Commons and Internet Archive…'
-            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · freely licensed, check each license before reuse`}
+            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · clips up to ${MAX_SECONDS}s · freely licensed, check each license before reuse`}
         </p>
       </div>
 
