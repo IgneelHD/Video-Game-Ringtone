@@ -1,0 +1,211 @@
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #eef0f6;
+  --text: #14161f;
+  --muted: #5d6275;
+  --border: #e2e5ee;
+  --accent: #5b5bf0;
+  --accent-text: #ffffff;
+  --ringtone: #5b5bf0;
+  --notification: #0f9d74;
+  --alarm: #e5484d;
+  --message: #d97706;
+  --radius: 16px;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #0f1117;
+  --surface: #181b24;
+  --surface-2: #222632;
+  --text: #eef0f6;
+  --muted: #9aa0b4;
+  --border: #2a2f3c;
+  --accent: #8282ff;
+  --accent-text: #0f1117;
+  --ringtone: #8282ff;
+  --notification: #34d399;
+  --alarm: #ff6b6f;
+  --message: #fbbf24;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+/* Hero */
+.hero { padding: 8px 0 32px; }
+.hero__top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+.logo { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+.hero h1 {
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin: 0 0 16px;
+  max-width: 760px;
+}
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero__sub { color: var(--muted); font-size: 17px; line-height: 1.55; max-width: 620px; margin: 0; }
+
+.icon-btn {
+  display: grid; place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.icon-btn:hover { background: var(--surface-2); }
+
+/* Controls */
+.controls {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  padding: 16px 0 8px;
+  border-top: 1px solid var(--border);
+}
+.search {
+  flex: 1 1 260px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px;
+  height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+}
+.search:focus-within { border-color: var(--accent); }
+.search input {
+  flex: 1; min-width: 0;
+  border: 0; outline: 0; background: transparent;
+  font: inherit; font-size: 15px; color: var(--text);
+}
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  height: 36px; padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px; font-weight: 500;
+}
+.chip:hover { background: var(--surface-2); }
+.chip--active, .chip--active:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+.segmented {
+  display: flex; padding: 4px; gap: 2px;
+  background: var(--surface-2);
+  border-radius: 12px;
+}
+.segmented button {
+  border: 0; background: transparent;
+  height: 32px; padding: 0 12px;
+  border-radius: 9px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+}
+.segmented button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+
+.count { color: var(--muted); font-size: 14px; margin: 16px 0 12px; }
+.empty { color: var(--muted); padding: 48px 0; text-align: center; }
+
+/* Grid + cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  --tone: var(--ringtone);
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s, transform 0.15s;
+}
+.card:hover { border-color: var(--tone); transform: translateY(-2px); }
+.card--notification { --tone: var(--notification); }
+.card--alarm { --tone: var(--alarm); }
+.card--message { --tone: var(--message); }
+
+.card__download {
+  position: absolute; top: 14px; right: 14px;
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: var(--accent-text);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.card__download:hover { transform: scale(1.06); }
+.card__download--external { background: var(--surface-2); color: var(--text); }
+.card__download--external:hover { background: var(--accent); color: var(--accent-text); }
+
+.card__tag {
+  align-self: flex-start;
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--tone);
+  margin-bottom: 14px;
+}
+.card__title { font-size: 19px; letter-spacing: -0.01em; margin: 0 48px 4px 0; }
+.card__game { font-size: 14px; color: var(--muted); margin: 0 48px 12px 0; }
+.card__vibe { font-size: 14px; line-height: 1.5; margin: 0 0 18px; flex: 1; }
+
+.card__footer {
+  display: flex; align-items: center; gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  min-height: 52px;
+}
+.card__play {
+  flex: none;
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--tone);
+  color: #fff;
+}
+.card__play:hover { filter: brightness(1.08); }
+:root[data-theme='dark'] .card__play { color: #0f1117; }
+.card__progress { flex: 1; height: 4px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.card__progress span { display: block; height: 100%; background: var(--tone); transition: width 0.1s linear; }
+.card__meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Footer */
+.site-footer {
+  margin-top: 48px; padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted); font-size: 14px; line-height: 1.6;
+  max-width: 760px;
+}
+.site-footer strong { color: var(--text); }
+.tip { padding: 12px 14px; background: var(--surface-2); border-radius: 12px; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .hero__top { margin-bottom: 28px; }
+  .segmented { width: 100%; }
+  .segmented button { flex: 1; padding: 0 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
