@@ -46,6 +46,9 @@ export function commonsCandidates(data) {
       file,
       title: plain(meta.ObjectName?.value || file),
       url: info.url,
+      page: info.descriptionurl,
+      creator: plain(meta.Artist?.value || meta.Credit?.value),
+      duration: Number(info.duration) || 0,
       license: plain(meta.LicenseShortName?.value) || licenseName(licenseUrl),
     }]
   })
@@ -62,6 +65,9 @@ export function archiveCandidates(id, data) {
       file: f.name.split('/').pop(),
       title: plain(f.title || meta.title || f.name),
       url: `https://archive.org/download/${encodeURIComponent(id)}/${f.name.split('/').map(encodeURIComponent).join('/')}`,
+      page: `https://archive.org/details/${encodeURIComponent(id)}`,
+      creator: plain(f.creator || meta.creator),
+      duration: Number(f.length) || 0,
       license: licenseName(licenseUrl),
     }))
 }

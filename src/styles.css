@@ -221,3 +221,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border-color: var(--tone);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 18%, transparent);
 }
+
+/* Open-source search results */
+.open-results { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); }
+.open-results__head h2 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+.open-results__head .count { margin: 6px 0 16px; }
+.open-results__more { display: block; margin: 20px auto 0; }
+.open-results__sites { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 24px; }
+.open-results__sites .count { margin: 0 4px 0 0; }
+.open-results__sites .chip { display: inline-flex; align-items: center; text-decoration: none; color: var(--text); }

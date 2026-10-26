@@ -1,21 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-// One shared <audio> element, so only a single sound plays at a time, routed
-// through a Web Audio analyser that feeds the card visualizer.
+// Shared playback, so only a single sound plays at a time. Sounds hosted on this
+// site go through a Web Audio analyser that feeds the card visualizer. Sounds
+// from other sites use a plain element: without CORS headers the analyser
+// would silence them.
 export function useAudioPlayer() {
   const audio = useRef(null)
+  const plain = useRef(null)
+  const active = useRef(null)
   const graph = useRef(null)
   const [playingId, setPlayingId] = useState(null)
   const [progress, setProgress] = useState(0)
   const [analyser, setAnalyser] = useState(null)
+  const [analysed, setAnalysed] = useState(false)
 
   useEffect(() => {
-    const a = new Audio()
-    a.addEventListener('timeupdate', () => setProgress(a.duration ? a.currentTime / a.duration : 0))
-    a.addEventListener('ended', () => { setPlayingId(null); setProgress(0) })
-    audio.current = a
+    const make = () => {
+      const a = new Audio()
+      a.addEventListener('timeupdate', () => { if (active.current === a) setProgress(a.duration ? a.currentTime / a.duration : 0) })
+      a.addEventListener('ended', () => { if (active.current === a) { setPlayingId(null); setProgress(0) } })
+      return a
+    }
+    audio.current = make()
+    plain.current = make()
     return () => {
-      a.pause()
+      audio.current.pause()
+      plain.current.pause()
       graph.current?.ctx.close()
     }
   }, [])
@@ -40,19 +50,22 @@ export function useAudioPlayer() {
     }
   }
 
-  const toggle = useCallback((id, src) => {
-    const a = audio.current
+  const toggle = useCallback((id, src, { external = false } = {}) => {
     if (playingId === id) {
-      a.pause()
+      active.current?.pause()
       setPlayingId(null)
       return
     }
-    connect()?.ctx.resume()
+    active.current?.pause()
+    const a = external ? plain.current : audio.current
+    active.current = a
+    if (!external) connect()?.ctx.resume()
+    setAnalysed(!external)
     a.src = src
     a.currentTime = 0
     setProgress(0)
     a.play().then(() => setPlayingId(id)).catch(() => setPlayingId(null))
   }, [playingId])
 
-  return { playingId, progress, analyser, toggle }
+  return { playingId, progress, analyser: analysed ? analyser : null, toggle }
 }

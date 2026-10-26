@@ -12,10 +12,11 @@ export default function SoundCard({ sound, isPlaying, progress, analyser, onTogg
 
   return (
     <article
-      className={`card card--${sound.category.toLowerCase()}${isPlaying ? ' card--playing' : ''}`}
+      className={`card card--${sound.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}${isPlaying ? ' card--playing' : ''}`}
       style={sound.color ? { '--tone': sound.color } : undefined}
     >
-      {mode === 'file' && (
+      {sound.external && <RemoteDownload sound={sound} />}
+      {mode === 'file' && !sound.external && (
         <a
           className="card__download"
           href={sound.src}
@@ -143,6 +144,52 @@ function IconicDownload({ sound, setStatus }) {
       title="Find a free recording and download it"
     >
       {state.phase === 'searching' ? <SpinnerIcon /> : <DownloadIcon />}
+    </button>
+  )
+}
+
+// A file on another site: download it in-page when that site allows it,
+// otherwise open the file in a new tab so it can be saved from there.
+function RemoteDownload({ sound }) {
+  const [state, setState] = useState('idle')
+  const controller = useRef(null)
+  useEffect(() => () => controller.current?.abort(), [])
+
+  const run = async () => {
+    const c = new AbortController()
+    controller.current = c
+    setState('busy')
+    try {
+      await downloadFile(sound, `${sound.title}${sound.creator ? ` - ${sound.creator}` : ''}`, c.signal)
+      setState('idle')
+    } catch {
+      if (!c.signal.aborted) setState('blocked')
+    }
+  }
+
+  if (state === 'blocked') {
+    return (
+      <a
+        className="card__download card__download--external"
+        href={sound.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Open ${sound.title} on ${sound.source} to save it`}
+        title={`${sound.source} blocks direct downloads. Open the file and save it from there.`}
+      >
+        <ExternalIcon />
+      </a>
+    )
+  }
+  return (
+    <button
+      className="card__download"
+      onClick={run}
+      disabled={state === 'busy'}
+      aria-label={`Download ${sound.title} from ${sound.source}`}
+      title={`Download from ${sound.source} · ${sound.license}`}
+    >
+      {state === 'busy' ? <SpinnerIcon /> : <DownloadIcon />}
     </button>
   )
 }

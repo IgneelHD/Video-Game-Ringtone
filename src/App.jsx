@@ -3,6 +3,7 @@ import { useAudioPlayer } from './lib/useAudioPlayer.js'
 import SoundCard from './components/SoundCard.jsx'
 import { MoonIcon, SearchIcon, SunIcon } from './components/Icons.jsx'
 import { CATEGORIES, SOUNDS } from './data/sounds.js'
+import { EXTERNAL_SITES, searchOpenSources } from './lib/openSearch.js'
 
 const SOURCES = [
   { id: 'all', label: 'All sounds' },
@@ -29,6 +30,8 @@ export default function App() {
     document.documentElement.dataset.theme = theme
     try { localStorage.setItem('theme', theme) } catch {}
   }, [theme])
+
+  const open = useOpenSearch(query)
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -101,7 +104,18 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <p className="empty">No sounds match. Try another search or filter.</p>
+          <p className="empty">No sounds match on this site{query.trim().length >= 2 ? '. Check the open sources below.' : '. Try another search or filter.'}</p>
+        )}
+
+        {query.trim().length >= 2 && (
+          <OpenResults
+            query={query.trim()}
+            open={open}
+            playingId={playingId}
+            progress={progress}
+            analyser={analyser}
+            toggle={toggle}
+          />
         )}
       </main>
 
@@ -121,5 +135,89 @@ export default function App() {
         </p>
       </footer>
     </div>
+  )
+}
+
+const PAGE = 12
+
+// Debounced search across open sound libraries for the current query.
+function useOpenSearch(query) {
+  const [state, setState] = useState({ status: 'idle', results: [], failed: [] })
+  useEffect(() => {
+    const q = query.trim()
+    if (q.length < 2) {
+      setState({ status: 'idle', results: [], failed: [] })
+      return
+    }
+    const c = new AbortController()
+    setState((s) => ({ ...s, status: 'loading' }))
+    const timer = setTimeout(() => {
+      searchOpenSources(q, c.signal)
+        .then(({ results, failed }) => setState({ status: 'done', results: results.map(toCard), failed }))
+        .catch(() => { if (!c.signal.aborted) setState({ status: 'done', results: [], failed: ['all sources'] }) })
+    }, 500)
+    return () => { clearTimeout(timer); c.abort() }
+  }, [query])
+  return state
+}
+
+const toCard = (r) => ({
+  ...r,
+  external: true,
+  game: r.creator || 'Unknown artist',
+  category: r.source,
+  vibe: `License: ${r.license}`,
+  src: r.url,
+})
+
+function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
+  const [shown, setShown] = useState(PAGE)
+  useEffect(() => setShown(PAGE), [query])
+  const { status, results, failed } = open
+
+  return (
+    <section className="open-results" aria-labelledby="open-results-title">
+      <div className="open-results__head">
+        <h2 id="open-results-title">From open sources</h2>
+        <p className="count">
+          {status === 'loading' ? 'Searching Openverse (Freesound, Jamendo, ccMixter…), Wikimedia Commons and Internet Archive…'
+            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · freely licensed, check each license before reuse`}
+        </p>
+      </div>
+
+      {status === 'done' && failed.length > 0 && (
+        <p className="count">Couldn’t reach: {failed.join(', ')}.</p>
+      )}
+
+      {status === 'done' && results.length > 0 && (
+        <div className="grid">
+          {results.slice(0, shown).map((s) => (
+            <SoundCard
+              key={s.id}
+              sound={s}
+              isPlaying={playingId === s.id}
+              progress={progress}
+              analyser={analyser}
+              onToggle={() => toggle(s.id, s.src, { external: true })}
+            />
+          ))}
+        </div>
+      )}
+      {status === 'done' && results.length > shown && (
+        <button className="chip open-results__more" onClick={() => setShown((n) => n + PAGE)}>
+          Show more ({results.length - shown})
+        </button>
+      )}
+      {status === 'done' && !results.length && <p className="empty">No open-source results.</p>}
+
+      <div className="open-results__sites">
+        <span className="count">Search “{query}” on:</span>
+        {EXTERNAL_SITES.map((site) => (
+          <a key={site.name} className="chip" href={site.url(query)} target="_blank" rel="noopener noreferrer">
+            {site.name} ↗
+          </a>
+        ))}
+      </div>
+    </section>
   )
 }
