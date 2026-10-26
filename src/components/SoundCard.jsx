@@ -41,7 +41,14 @@ export default function SoundCard({ sound, isPlaying, progress, analyser, onTogg
       )}
       {mode === 'search' && <IconicDownload sound={sound} setStatus={setStatus} />}
 
-      <span className="card__tag">{sound.category}</span>
+      {sound.image ? (
+        <div className="card__head">
+          <img className="card__cover" src={sound.image} alt="" loading="lazy" />
+          <span className="card__tag">{sound.category}</span>
+        </div>
+      ) : (
+        <span className="card__tag">{sound.category}</span>
+      )}
       <h3 className="card__title">{sound.title}</h3>
       <p className="card__game">
         {sound.game}

@@ -166,7 +166,7 @@ const toCard = (r) => ({
   external: true,
   game: r.creator || 'Unknown artist',
   category: r.source,
-  vibe: `License: ${r.license}`,
+  vibe: [r.album, r.license].filter(Boolean).join(' · '),
   src: r.url,
 })
 
@@ -178,10 +178,10 @@ function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
   return (
     <section className="open-results" aria-labelledby="open-results-title">
       <div className="open-results__head">
-        <h2 id="open-results-title">From open sources</h2>
+        <h2 id="open-results-title">From around the web</h2>
         <p className="count">
-          {status === 'loading' ? 'Searching Openverse (Freesound, Jamendo, ccMixter…), Wikimedia Commons and Internet Archive…'
-            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · clips up to ${MAX_SECONDS}s · freely licensed, check each license before reuse`}
+          {status === 'loading' ? 'Searching Deezer, iTunes and Openverse sound effects…'
+            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · Deezer & iTunes give 30s previews, Openverse clips up to ${MAX_SECONDS}s`}
         </p>
       </div>
 
