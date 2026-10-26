@@ -1,17 +1,17 @@
 // Searches real sound catalogs straight from the browser, like tape-studio:
-//  - Deezer and iTunes: the music catalogs, including game soundtracks. Each
-//    track has an official 30-second preview clip, a ringtone-sized length.
-//    Both are queried over JSONP, which they document for cross-site use.
+//  - iTunes: the music catalog, including game soundtracks. Each track has an
+//    official 30-second preview clip, a ringtone-sized length. Queried over
+//    JSONP, which Apple documents for cross-site use.
 //  - Openverse: freely licensed sound effects and music (Freesound, Jamendo,
 //    ccMixter…), limited to those categories so podcasts and spoken word
 //    recordings stay out.
-// Popular sites without a public search API are offered as "search there" links.
+// Popular sites without a public search API (Zedge, MyInstants…) are offered as
+// "search there" links.
 import { normalize } from './freeAudio.js'
 
 export const MAX_SECONDS = 60
 
 export const SOURCE_COLORS = {
-  Deezer: '#a238ff',
   iTunes: '#fa2d48',
   Freesound: '#e5484d',
   Jamendo: '#d6336c',
@@ -27,18 +27,19 @@ const OPENVERSE_SOURCES = {
 }
 
 export const EXTERNAL_SITES = [
-  { name: 'MyInstants', url: (q) => `https://www.myinstants.com/en/search/?name=${encodeURIComponent(q)}` },
+  // Zedge first: shown as the prominent button.
   { name: 'Zedge', url: (q) => `https://www.zedge.net/find/ringtones/${encodeURIComponent(q)}` },
+  { name: 'MyInstants', url: (q) => `https://www.myinstants.com/en/search/?name=${encodeURIComponent(q)}` },
   { name: 'Pixabay', url: (q) => `https://pixabay.com/sound-effects/search/${encodeURIComponent(q)}/` },
   { name: 'Freesound', url: (q) => `https://freesound.org/search/?q=${encodeURIComponent(q)}` },
   { name: 'The Sounds Resource', url: (q) => `https://www.sounds-resource.com/search/?q=${encodeURIComponent(q)}` },
   { name: 'KHInsider', url: (q) => `https://downloads.khinsider.com/search?search=${encodeURIComponent(q)}` },
 ]
 
-// JSONP for the two fixed catalog hosts only, as in tape-studio's catalog-client.
+// JSONP for the fixed catalog host only, as in tape-studio's catalog-client.
 function jsonp(url, signal) {
   const u = new URL(url)
-  if (!['itunes.apple.com', 'api.deezer.com'].includes(u.hostname)) return Promise.reject(new Error('Unsupported host'))
+  if (u.hostname !== 'itunes.apple.com') return Promise.reject(new Error('Unsupported host'))
   return new Promise((resolve, reject) => {
     const name = `gtCatalog_${Math.random().toString(36).slice(2)}`
     const script = document.createElement('script')
@@ -47,7 +48,6 @@ function jsonp(url, signal) {
     const timer = setTimeout(() => { clean(); reject(new Error('Timed out')) }, 12000)
     window[name] = (data) => { clean(); resolve(data) }
     u.searchParams.set('callback', name)
-    if (u.hostname === 'api.deezer.com') u.searchParams.set('output', 'jsonp')
     script.src = u.href
     script.onerror = () => { clean(); reject(new Error('Network error')) }
     signal?.addEventListener('abort', abort)
@@ -59,25 +59,6 @@ async function getJson(url, signal) {
   const r = await fetch(url, { signal })
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   return r.json()
-}
-
-async function deezer(q, signal) {
-  const data = await jsonp(`https://api.deezer.com/search/track?q=${encodeURIComponent(q)}&limit=25`, signal)
-  if (data.error) throw new Error(data.error.message || 'Deezer error')
-  return (data.data || [])
-    .filter((t) => t.preview)
-    .map((t) => ({
-      title: t.title,
-      creator: t.artist?.name || '',
-      album: t.album?.title || '',
-      image: t.album?.cover_medium || '',
-      source: 'Deezer',
-      license: '30s official preview',
-      url: t.preview,
-      page: t.link,
-      duration: 30,
-      file: `${t.id}.mp3`,
-    }))
 }
 
 async function itunes(q, signal) {
@@ -123,10 +104,10 @@ async function openverse(q, signal) {
     }))
 }
 
-const SEARCHERS = { Deezer: deezer, iTunes: itunes, Openverse: openverse }
+const SEARCHERS = { iTunes: itunes, Openverse: openverse }
 
-// Interleaves the sources so none floods the list, and drops a track that both
-// Deezer and iTunes return.
+// Interleaves the sources so none floods the list, and drops repeated tracks
+// (iTunes lists the same song on several albums).
 export async function searchOpenSources(query, signal) {
   const names = Object.keys(SEARCHERS)
   const settled = await Promise.allSettled(names.map((n) => SEARCHERS[n](query, signal)))
@@ -139,7 +120,7 @@ export async function searchOpenSources(query, signal) {
     for (const list of lists) {
       const item = list[i]
       if (!item) continue
-      const key = item.source === 'Deezer' || item.source === 'iTunes' ? `track|${normalize(item.title)}|${normalize(item.creator)}` : item.url
+      const key = item.source === 'iTunes' ? `track|${normalize(item.title)}|${normalize(item.creator)}` : item.url
       if (seen.has(key)) continue
       seen.add(key)
       results.push({ ...item, id: `ext-${results.length}-${item.url}`, color: SOURCE_COLORS[item.source] || '' })

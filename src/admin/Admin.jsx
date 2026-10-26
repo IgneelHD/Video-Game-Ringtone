@@ -506,6 +506,7 @@ function Editor({ sound, categories, uploads, index, total, onChange, onMode, on
           isPlaying={!!src && player.playingId === src}
           progress={player.progress}
           analyser={player.analyser}
+          onSeek={player.seek}
           onToggle={() => player.toggle(src, src)}
         />
       </div>

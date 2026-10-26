@@ -3,9 +3,11 @@ import { useEffect, useRef } from 'react'
 const BARS = 28
 
 // Live frequency bars in the card's tone color. Bars left of the playhead are
-// fully colored and the rest are faded, so it doubles as the progress bar.
-export default function Visualizer({ analyser, progress }) {
+// fully colored and the rest are faded, so it doubles as the progress bar:
+// press and drag on it (mouse or touch) to scrub, or use the arrow keys.
+export default function Visualizer({ analyser, progress, onSeek, label }) {
   const canvas = useRef(null)
+  const dragging = useRef(false)
   const progressRef = useRef(progress)
   progressRef.current = progress
 
@@ -63,5 +65,46 @@ export default function Visualizer({ analyser, progress }) {
     return () => cancelAnimationFrame(frame)
   }, [analyser])
 
-  return <canvas ref={canvas} className="visualizer" aria-hidden="true" />
+  const seekTo = (e) => {
+    const r = canvas.current.getBoundingClientRect()
+    onSeek?.((e.clientX - r.left) / r.width)
+  }
+  const pointerDown = (e) => {
+    if (e.button !== 0 || !onSeek) return
+    e.preventDefault()
+    dragging.current = true
+    canvas.current.setPointerCapture(e.pointerId)
+    seekTo(e)
+  }
+  const pointerMove = (e) => { if (dragging.current) seekTo(e) }
+  const pointerUp = (e) => {
+    dragging.current = false
+    if (canvas.current.hasPointerCapture(e.pointerId)) canvas.current.releasePointerCapture(e.pointerId)
+  }
+  const keyDown = (e) => {
+    const step = { ArrowLeft: -0.05, ArrowDown: -0.05, ArrowRight: 0.05, ArrowUp: 0.05 }[e.key]
+    if (e.key === 'Home') onSeek?.(0)
+    else if (step) onSeek?.(progressRef.current + step)
+    else return
+    e.preventDefault()
+  }
+
+  return (
+    <canvas
+      ref={canvas}
+      className={`visualizer${onSeek ? ' visualizer--seekable' : ''}`}
+      role={onSeek ? 'slider' : undefined}
+      tabIndex={onSeek ? 0 : undefined}
+      aria-label={onSeek ? `Seek in ${label || 'sound'}` : undefined}
+      aria-valuemin={onSeek ? 0 : undefined}
+      aria-valuemax={onSeek ? 100 : undefined}
+      aria-valuenow={onSeek ? Math.round(progress * 100) : undefined}
+      aria-hidden={onSeek ? undefined : true}
+      onPointerDown={pointerDown}
+      onPointerMove={pointerMove}
+      onPointerUp={pointerUp}
+      onPointerCancel={pointerUp}
+      onKeyDown={keyDown}
+    />
+  )
 }

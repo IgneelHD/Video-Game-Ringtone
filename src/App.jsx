@@ -24,7 +24,7 @@ export default function App() {
   const [category, setCategory] = useState('All')
   const [source, setSource] = useState('all')
   const [theme, setTheme] = useState(initialTheme)
-  const { playingId, progress, analyser, toggle } = useAudioPlayer()
+  const { playingId, progress, analyser, toggle, seek } = useAudioPlayer()
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -99,6 +99,7 @@ export default function App() {
                 isPlaying={playingId === s.id}
                 progress={progress}
                 analyser={analyser}
+                onSeek={seek}
                 onToggle={() => toggle(s.id, s.src)}
               />
             ))}
@@ -115,6 +116,7 @@ export default function App() {
             progress={progress}
             analyser={analyser}
             toggle={toggle}
+            seek={seek}
           />
         )}
       </main>
@@ -170,7 +172,7 @@ const toCard = (r) => ({
   src: r.url,
 })
 
-function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
+function OpenResults({ query, open, playingId, progress, analyser, toggle, seek }) {
   const [shown, setShown] = useState(PAGE)
   useEffect(() => setShown(PAGE), [query])
   const { status, results, failed } = open
@@ -180,8 +182,8 @@ function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
       <div className="open-results__head">
         <h2 id="open-results-title">From around the web</h2>
         <p className="count">
-          {status === 'loading' ? 'Searching Deezer, iTunes and Openverse sound effects…'
-            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · Deezer & iTunes give 30s previews, Openverse clips up to ${MAX_SECONDS}s`}
+          {status === 'loading' ? 'Searching iTunes and Openverse sound effects…'
+            : `${results.length} result${results.length === 1 ? '' : 's'} for “${query}” · iTunes gives 30s previews, Openverse clips up to ${MAX_SECONDS}s`}
         </p>
       </div>
 
@@ -198,6 +200,7 @@ function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
               isPlaying={playingId === s.id}
               progress={progress}
               analyser={analyser}
+              onSeek={seek}
               onToggle={() => toggle(s.id, s.src, { external: true })}
             />
           ))}
@@ -211,8 +214,11 @@ function OpenResults({ query, open, playingId, progress, analyser, toggle }) {
       {status === 'done' && !results.length && <p className="empty">No open-source results.</p>}
 
       <div className="open-results__sites">
-        <span className="count">Search “{query}” on:</span>
-        {EXTERNAL_SITES.map((site) => (
+        <a className="btn-zedge" href={EXTERNAL_SITES[0].url(query)} target="_blank" rel="noopener noreferrer">
+          Search “{query}” ringtones on Zedge ↗
+        </a>
+        <span className="count">Also on:</span>
+        {EXTERNAL_SITES.slice(1).map((site) => (
           <a key={site.name} className="chip" href={site.url(query)} target="_blank" rel="noopener noreferrer">
             {site.name} ↗
           </a>

@@ -4,7 +4,7 @@ import { downloadFile, searchFreeAudio } from '../lib/freeAudio.js'
 import { hostName, modeOf } from '../data/sounds.js'
 import Visualizer from './Visualizer.jsx'
 
-export default function SoundCard({ sound, isPlaying, progress, analyser, onToggle }) {
+export default function SoundCard({ sound, isPlaying, progress, analyser, onSeek, onToggle }) {
   const mode = modeOf(sound)
   const isFree = mode === 'file'
   const [status, setStatus] = useState('')
@@ -63,7 +63,7 @@ export default function SoundCard({ sound, isPlaying, progress, analyser, onTogg
               {isPlaying ? <PauseIcon /> : <PlayIcon />}
             </button>
             {isPlaying ? (
-              <Visualizer analyser={analyser} progress={progress} />
+              <Visualizer analyser={analyser} progress={progress} onSeek={onSeek} label={sound.title} />
             ) : (
               <div className="card__progress" aria-hidden="true">
                 <span style={{ width: 0 }} />

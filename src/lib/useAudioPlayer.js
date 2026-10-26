@@ -67,5 +67,14 @@ export function useAudioPlayer() {
     a.play().then(() => setPlayingId(id)).catch(() => setPlayingId(null))
   }, [playingId])
 
-  return { playingId, progress, analyser: analysed ? analyser : null, toggle }
+  // Jumps the playing sound to a fraction (0–1) of its length.
+  const seek = useCallback((fraction) => {
+    const a = active.current
+    if (!a || !Number.isFinite(a.duration) || !a.duration) return
+    const f = Math.min(1, Math.max(0, fraction))
+    a.currentTime = Math.min(f * a.duration, a.duration - 0.05)
+    setProgress(f)
+  }, [])
+
+  return { playingId, progress, analyser: analysed ? analyser : null, toggle, seek }
 }

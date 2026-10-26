@@ -234,3 +234,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .card__head { display: flex; align-items: center; gap: 12px; margin: 0 48px 14px 0; }
 .card__head .card__tag { margin: 0; align-self: center; }
 .card__cover { flex: none; width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: var(--surface-2); }
+.btn-zedge {
+  display: inline-flex; align-items: center; height: 40px; padding: 0 16px; margin-right: 8px;
+  border-radius: 999px; background: var(--accent); color: var(--accent-text);
+  font-size: 14px; font-weight: 700; text-decoration: none;
+}
+.btn-zedge:hover { filter: brightness(1.08); }
+.visualizer--seekable { cursor: ew-resize; touch-action: none; border-radius: 4px; }
+.visualizer--seekable:focus-visible { outline-offset: 4px; }
