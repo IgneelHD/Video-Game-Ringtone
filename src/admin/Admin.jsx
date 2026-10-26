@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import SoundCard from '../components/SoundCard.jsx'
 import { MoonIcon, SearchIcon, SunIcon } from '../components/Icons.jsx'
 import { fileUrl, modeOf } from '../data/sounds.js'
+import { useAudioPlayer } from '../lib/useAudioPlayer.js'
 import { GitHub, OWNER, REPO } from './github.js'
 import { loadVault, lockToken, passwordProblem, saveVault, unlockToken } from './vault.js'
 
@@ -382,23 +383,8 @@ function Editor({ sound, categories, uploads, index, total, onChange, onMode, on
   const tone = sound.color || DEFAULT_TONES[sound.category] || '#5b5bf0'
   const fileInput = useRef(null)
 
-  // Preview playback, independent of the public site's player.
-  const audio = useRef(null)
-  const [playing, setPlaying] = useState(false)
-  const [progress, setProgress] = useState(0)
-  useEffect(() => {
-    const a = new Audio()
-    a.ontimeupdate = () => setProgress(a.duration ? a.currentTime / a.duration : 0)
-    a.onended = () => { setPlaying(false); setProgress(0) }
-    audio.current = a
-    return () => a.pause()
-  }, [])
-  const toggle = () => {
-    const a = audio.current
-    if (playing) { a.pause(); setPlaying(false); return }
-    a.src = src
-    a.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
-  }
+  // Preview playback; keyed by src so replacing the file restarts it.
+  const player = useAudioPlayer()
 
   return (
     <div className="editor">
@@ -515,7 +501,13 @@ function Editor({ sound, categories, uploads, index, total, onChange, onMode, on
 
       <div className="editor__preview">
         <p className="count">Preview</p>
-        <SoundCard sound={{ ...sound, src }} isPlaying={playing} progress={progress} onToggle={toggle} />
+        <SoundCard
+          sound={{ ...sound, src }}
+          isPlaying={!!src && player.playingId === src}
+          progress={player.progress}
+          analyser={player.analyser}
+          onToggle={() => player.toggle(src, src)}
+        />
       </div>
     </div>
   )

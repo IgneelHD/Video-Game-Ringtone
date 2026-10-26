@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { DownloadIcon, ExternalIcon, PauseIcon, PlayIcon, SpinnerIcon } from './Icons.jsx'
 import { downloadFile, searchFreeAudio } from '../lib/freeAudio.js'
 import { hostName, modeOf } from '../data/sounds.js'
+import Visualizer from './Visualizer.jsx'
 
-export default function SoundCard({ sound, isPlaying, progress, onToggle }) {
+export default function SoundCard({ sound, isPlaying, progress, analyser, onToggle }) {
   const mode = modeOf(sound)
   const isFree = mode === 'file'
   const [status, setStatus] = useState('')
@@ -11,7 +12,7 @@ export default function SoundCard({ sound, isPlaying, progress, onToggle }) {
 
   return (
     <article
-      className={`card card--${sound.category.toLowerCase()}`}
+      className={`card card--${sound.category.toLowerCase()}${isPlaying ? ' card--playing' : ''}`}
       style={sound.color ? { '--tone': sound.color } : undefined}
     >
       {mode === 'file' && (
@@ -53,9 +54,13 @@ export default function SoundCard({ sound, isPlaying, progress, onToggle }) {
             <button className="card__play" onClick={onToggle} aria-label={isPlaying ? 'Pause' : 'Play preview'}>
               {isPlaying ? <PauseIcon /> : <PlayIcon />}
             </button>
-            <div className="card__progress" aria-hidden="true">
-              <span style={{ width: `${isPlaying ? progress * 100 : 0}%` }} />
-            </div>
+            {isPlaying ? (
+              <Visualizer analyser={analyser} progress={progress} />
+            ) : (
+              <div className="card__progress" aria-hidden="true">
+                <span style={{ width: 0 }} />
+              </div>
+            )}
             {sound.duration > 0 && <span className="card__meta">{sound.duration.toFixed(1)}s</span>}
           </>
         ) : (

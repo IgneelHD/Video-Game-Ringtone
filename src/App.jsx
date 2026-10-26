@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useAudioPlayer } from './lib/useAudioPlayer.js'
 import SoundCard from './components/SoundCard.jsx'
 import { MoonIcon, SearchIcon, SunIcon } from './components/Icons.jsx'
 import { CATEGORIES, SOUNDS } from './data/sounds.js'
@@ -22,36 +23,12 @@ export default function App() {
   const [category, setCategory] = useState('All')
   const [source, setSource] = useState('all')
   const [theme, setTheme] = useState(initialTheme)
-  const [playingId, setPlayingId] = useState(null)
-  const [progress, setProgress] = useState(0)
-  const audioRef = useRef(null)
+  const { playingId, progress, analyser, toggle } = useAudioPlayer()
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     try { localStorage.setItem('theme', theme) } catch {}
   }, [theme])
-
-  // One shared player so only a single preview plays at a time.
-  useEffect(() => {
-    const audio = new Audio()
-    audio.addEventListener('timeupdate', () => setProgress(audio.duration ? audio.currentTime / audio.duration : 0))
-    audio.addEventListener('ended', () => { setPlayingId(null); setProgress(0) })
-    audioRef.current = audio
-    return () => audio.pause()
-  }, [])
-
-  const toggle = (sound) => {
-    const audio = audioRef.current
-    if (playingId === sound.id) {
-      audio.pause()
-      setPlayingId(null)
-      return
-    }
-    audio.src = sound.src
-    audio.currentTime = 0
-    setProgress(0)
-    audio.play().then(() => setPlayingId(sound.id)).catch(() => setPlayingId(null))
-  }
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -118,7 +95,8 @@ export default function App() {
                 sound={s}
                 isPlaying={playingId === s.id}
                 progress={progress}
-                onToggle={() => toggle(s)}
+                analyser={analyser}
+                onToggle={() => toggle(s.id, s.src)}
               />
             ))}
           </div>
