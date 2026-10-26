@@ -147,78 +147,6 @@
       "duration": 0.9
     },
     {
-      "id": "mario-coin",
-      "title": "Coin",
-      "game": "Super Mario Bros.",
-      "year": 1985,
-      "category": "Notification",
-      "vibe": "The most recognisable pickup sound ever",
-      "color": "",
-      "query": "mario coin",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=mario%20coin"
-    },
-    {
-      "id": "mario-1up",
-      "title": "1-Up",
-      "game": "Super Mario Bros.",
-      "year": 1985,
-      "category": "Message",
-      "vibe": "Cheerful extra-life jingle",
-      "color": "",
-      "query": "mario 1up",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=mario%201up"
-    },
-    {
-      "id": "mario-powerup",
-      "title": "Power-Up",
-      "game": "Super Mario Bros.",
-      "year": 1985,
-      "category": "Notification",
-      "vibe": "Mushroom growth sound",
-      "color": "",
-      "query": "mario power up",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=mario%20power%20up"
-    },
-    {
-      "id": "zelda-secret",
-      "title": "Secret Discovered",
-      "game": "The Legend of Zelda",
-      "year": 1986,
-      "category": "Message",
-      "vibe": "Puzzle-solved chime",
-      "color": "",
-      "query": "zelda secret",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=zelda%20secret"
-    },
-    {
-      "id": "zelda-item",
-      "title": "Item Get",
-      "game": "The Legend of Zelda: Ocarina of Time",
-      "year": 1998,
-      "category": "Notification",
-      "vibe": "Holding the item above your head",
-      "color": "",
-      "query": "zelda item get",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=zelda%20item%20get"
-    },
-    {
-      "id": "zelda-hey-listen",
-      "title": "Hey! Listen!",
-      "game": "The Legend of Zelda: Ocarina of Time",
-      "year": 1998,
-      "category": "Message",
-      "vibe": "Navi demanding your attention",
-      "color": "",
-      "query": "hey listen navi",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=hey%20listen%20navi"
-    },
-    {
       "id": "sonic-ring",
       "title": "Ring Collect",
       "game": "Sonic the Hedgehog",
@@ -241,30 +169,6 @@
       "query": "pokemon center heal",
       "sourceName": "MyInstants",
       "sourceUrl": "https://www.myinstants.com/en/search/?name=pokemon%20center%20heal"
-    },
-    {
-      "id": "pokemon-levelup",
-      "title": "Level Up",
-      "game": "Pokémon Red & Blue",
-      "year": 1996,
-      "category": "Notification",
-      "vibe": "Your Pokémon grew to a new level",
-      "color": "",
-      "query": "pokemon level up",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=pokemon%20level%20up"
-    },
-    {
-      "id": "mgs-alert",
-      "title": "Alert “!”",
-      "game": "Metal Gear Solid",
-      "year": 1998,
-      "category": "Alarm",
-      "vibe": "The guard has spotted you",
-      "color": "",
-      "query": "metal gear alert",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=metal%20gear%20alert"
     },
     {
       "id": "ff-victory",
@@ -291,18 +195,6 @@
       "sourceUrl": "https://www.myinstants.com/en/search/?name=pacman%20intro"
     },
     {
-      "id": "tetris-theme",
-      "title": "Theme A",
-      "game": "Tetris (Game Boy)",
-      "year": 1989,
-      "category": "Ringtone",
-      "vibe": "Korobeiniki on the Game Boy",
-      "color": "",
-      "query": "tetris theme",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=tetris%20theme"
-    },
-    {
       "id": "halo-theme",
       "title": "Main Theme Chant",
       "game": "Halo: Combat Evolved",
@@ -315,42 +207,6 @@
       "sourceUrl": "https://www.myinstants.com/en/search/?name=halo%20theme"
     },
     {
-      "id": "minecraft-levelup",
-      "title": "XP Level Up",
-      "game": "Minecraft",
-      "year": 2011,
-      "category": "Notification",
-      "vibe": "Satisfying orb ding",
-      "color": "",
-      "query": "minecraft level up",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=minecraft%20level%20up"
-    },
-    {
-      "id": "minecraft-villager",
-      "title": "Villager “Hmm”",
-      "game": "Minecraft",
-      "year": 2011,
-      "category": "Message",
-      "vibe": "The villager grunt",
-      "color": "",
-      "query": "minecraft villager",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=minecraft%20villager"
-    },
-    {
-      "id": "among-us-meeting",
-      "title": "Emergency Meeting",
-      "game": "Among Us",
-      "year": 2018,
-      "category": "Alarm",
-      "vibe": "Someone pressed the button",
-      "color": "",
-      "query": "among us emergency meeting",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=among%20us%20emergency%20meeting"
-    },
-    {
       "id": "animal-crossing-ring",
       "title": "Phone Ring",
       "game": "Animal Crossing: New Horizons",
@@ -358,21 +214,8 @@
       "category": "Ringtone",
       "vibe": "Cosy NookPhone vibe",
       "color": "",
-      "query": "animal crossing",
-      "sourceName": "The Sounds Resource",
-      "sourceUrl": "https://www.sounds-resource.com/search/?q=animal%20crossing"
-    },
-    {
-      "id": "sf2-hadouken",
-      "title": "Hadouken!",
-      "game": "Street Fighter II",
-      "year": 1991,
-      "category": "Message",
-      "vibe": "Fireball shout",
-      "color": "",
-      "query": "hadouken",
-      "sourceName": "MyInstants",
-      "sourceUrl": "https://www.myinstants.com/en/search/?name=hadouken"
+      "file": "sounds/phone-ring-mvp1ggjp.mp3",
+      "duration": 30
     },
     {
       "id": "mk-finish",
@@ -394,21 +237,8 @@
       "category": "Ringtone",
       "vibe": "GLaDOS end-credits song",
       "color": "",
-      "query": "portal still alive",
-      "sourceName": "Internet Archive",
-      "sourceUrl": "https://archive.org/search?query=portal%20still%20alive"
-    },
-    {
-      "id": "stardew-coin",
-      "title": "Purchase",
-      "game": "Stardew Valley",
-      "year": 2016,
-      "category": "Notification",
-      "vibe": "Cash register coin clink",
-      "color": "",
-      "query": "stardew valley",
-      "sourceName": "The Sounds Resource",
-      "sourceUrl": "https://www.sounds-resource.com/search/?q=stardew%20valley"
+      "file": "sounds/still-alive-mvp1eihx.mp3",
+      "duration": 20.9
     }
   ]
 }
