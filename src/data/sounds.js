@@ -1,8 +1,9 @@
 // Two kinds of entries:
 //  - kind 'free':   original CC0 chiptunes hosted in this repo (public/sounds/),
 //                   playable in-page and downloadable directly.
-//  - kind 'iconic': famous copyrighted game sounds. We don't re-host them; the
-//                   download button opens a public source where users can get them.
+//  - kind 'iconic': famous game sounds. We don't re-host them; the download button
+//                   searches Wikimedia Commons / Internet Archive for a freely licensed
+//                   recording matching `query`, and falls back to the `source` page.
 
 const search = {
   myinstants: (q) => `https://www.myinstants.com/en/search/?name=${encodeURIComponent(q)}`,
@@ -32,6 +33,7 @@ const iconic = (id, title, game, year, category, vibe, query, sourceName = 'myin
   year,
   category,
   vibe,
+  query,
   source: {
     name: { myinstants: 'MyInstants', soundsResource: 'The Sounds Resource', archive: 'Internet Archive' }[sourceName],
     url: search[sourceName](query),
