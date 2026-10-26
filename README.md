@@ -22,9 +22,15 @@ npm run sounds    # regenerate the original tones (needs ffmpeg for MP3)
 
 ## Admin tools
 
-Open `admin.html` on the live site (https://igneelhd.github.io/Video-Game-Ringtone/admin.html) and sign in
-with a fine-grained GitHub token that has **Contents: Read and write** on this repository
-(optionally **Actions: Read** to see publish status). From there you can:
+Open `admin.html` on the live site (https://igneelhd.github.io/Video-Game-Ringtone/admin.html).
+
+**First time:** create a fine-grained GitHub token with **Contents: Read and write** on this repository
+(optionally **Actions: Read** to see publish status), paste it once, and choose a username and password.
+The token is encrypted in the browser (AES-GCM, key from PBKDF2-SHA256 with 600k rounds) and saved as
+`public/admin-key.json`. After that, sign in with just your username and password. That file is public,
+so use a strong, unique password. When the token expires, use "Set up again" with a new token.
+
+From there you can:
 
 - edit a sound's title, game, year, category, description and card color;
 - upload your own MP3/M4A/OGG/WAV (max 15 MB), which visitors can play and download;
@@ -32,7 +38,7 @@ with a fine-grained GitHub token that has **Contents: Read and write** on this r
 - add, delete and reorder sounds.
 
 **Save & publish** writes `src/data/sounds.json` and any uploaded files to the repo in one commit,
-and the Pages workflow republishes the site in about a minute. The token is stored only in your browser.
+and the Pages workflow republishes the site in about a minute. Change the username/password under **Account**.
 
 ## Editing by hand
 
