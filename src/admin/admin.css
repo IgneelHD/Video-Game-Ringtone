@@ -1,0 +1,124 @@
+/* Admin page. Builds on the tokens and components in ../styles.css. */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 38px; padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 14px; font-weight: 600;
+  text-decoration: none; color: var(--text);
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn--primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+.btn--ghost { background: transparent; }
+.btn--danger { color: var(--alarm); }
+.btn--block { width: 100%; height: 44px; margin-top: 8px; }
+.link-btn { border: 0; background: none; padding: 0 4px; color: var(--accent); font-size: 13px; font-weight: 600; }
+
+.admin { max-width: 1280px; margin: 0 auto; padding: 16px 16px 48px; }
+.admin__bar {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  padding-bottom: 16px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.admin__brand { display: flex; align-items: center; gap: 10px; }
+.admin__badge {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 3px 8px; border-radius: 6px;
+  background: var(--surface-2); color: var(--muted);
+}
+.admin__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.admin__msg {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 16px; padding: 10px 14px;
+  border-radius: 10px; font-size: 14px;
+}
+.admin__msg a { color: inherit; font-weight: 600; }
+.admin__msg .link-btn { margin-left: auto; color: inherit; }
+.admin__msg--error { background: color-mix(in srgb, var(--alarm) 14%, transparent); color: var(--alarm); }
+.admin__msg--ok { background: color-mix(in srgb, var(--notification) 14%, transparent); color: var(--notification); }
+
+.admin__layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+.admin__list { position: sticky; top: 16px; }
+.admin__list-head { display: flex; gap: 8px; }
+.admin__list-head .search { flex: 1 1 0; min-width: 0; height: 38px; }
+.admin__layout > *, .editor > * { min-width: 0; }
+.admin__list .count { margin: 12px 0 8px; }
+.admin__list ul { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 190px); overflow: auto; }
+.admin__row {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin-bottom: 4px;
+  border: 1px solid transparent; border-radius: 10px;
+  background: transparent; text-align: left;
+}
+.admin__row:hover { background: var(--surface); }
+.admin__row--active, .admin__row--active:hover { background: var(--surface); border-color: var(--border); }
+.admin__dot { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.admin__row-text { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.admin__row-text b, .admin__row-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin__row-text b { font-size: 14px; }
+.admin__row-text small { font-size: 12px; color: var(--muted); }
+.admin__warn {
+  flex: none; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--alarm); color: #fff; font-size: 12px; font-weight: 700;
+}
+
+.editor { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+.editor__form {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.editor__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.editor__head h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+.editor__tools { display: flex; gap: 6px; }
+.editor__two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.editor__panel { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--surface-2); }
+.editor__upload { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.editor__file { font-size: 13px; color: var(--muted); word-break: break-all; }
+.editor__file em { color: var(--message); font-style: normal; }
+.editor__color { display: flex; align-items: center; gap: 10px; height: 40px; font-size: 13px; color: var(--muted); }
+.editor__color input[type='color'] { width: 40px; height: 40px; padding: 2px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); cursor: pointer; }
+.editor__preview { position: sticky; top: 16px; }
+.editor__preview .count { margin-top: 0; }
+.editor .segmented { flex-wrap: wrap; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.field input:not([type='color']):not([type='checkbox']), .field select, .field textarea {
+  width: 100%; min-height: 40px; padding: 8px 12px;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg); color: var(--text);
+  font: inherit; font-size: 15px;
+}
+.field textarea { resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+.hint { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.check { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; font-size: 14px; }
+
+.signin { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.signin__card {
+  width: 100%; max-width: 460px; padding: 28px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.signin__card h1 { font-size: 24px; letter-spacing: -0.02em; margin: 24px 0 8px; }
+.signin__steps { padding-left: 20px; margin: 12px 0 20px; }
+.signin__steps a { color: var(--accent); }
+
+@media (max-width: 1000px) {
+  .editor { grid-template-columns: 1fr; }
+  .editor__preview { position: static; max-width: 360px; }
+}
+@media (max-width: 760px) {
+  .admin__layout { grid-template-columns: 1fr; }
+  .admin__list { position: static; }
+  .admin__list ul { max-height: 260px; }
+  .editor__two { grid-template-columns: 1fr; }
+  .admin__actions { width: 100%; }
+  .admin__actions .btn--primary { margin-left: auto; }
+}

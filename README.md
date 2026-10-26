@@ -20,8 +20,22 @@ npm run build     # production build in dist/ (relative paths, works on GitHub P
 npm run sounds    # regenerate the original tones (needs ffmpeg for MP3)
 ```
 
-## Adding sounds
+## Admin tools
 
-Edit `src/data/sounds.js`. For a new original tone, add a melody to `scripts/generate-sounds.mjs`,
-run `npm run sounds`, then add a `free(...)` entry. For a well-known game sound, add an `iconic(...)` entry
-with a search query for the public source.
+Open `admin.html` on the live site (https://igneelhd.github.io/Video-Game-Ringtone/admin.html) and sign in
+with a fine-grained GitHub token that has **Contents: Read and write** on this repository
+(optionally **Actions: Read** to see publish status). From there you can:
+
+- edit a sound's title, game, year, category, description and card color;
+- upload your own MP3/M4A/OGG/WAV (max 15 MB), which visitors can play and download;
+- set a custom download link, or let the button search free sources;
+- add, delete and reorder sounds.
+
+**Save & publish** writes `src/data/sounds.json` and any uploaded files to the repo in one commit,
+and the Pages workflow republishes the site in about a minute. The token is stored only in your browser.
+
+## Editing by hand
+
+The sound list is `src/data/sounds.json`. Each sound uses one download mode: `file` (path under `public/`),
+`downloadUrl` (external link), or `query` + `sourceName`/`sourceUrl` (free-source search with a fallback page).
+To make more original tones, add a melody to `scripts/generate-sounds.mjs` and run `npm run sounds`.

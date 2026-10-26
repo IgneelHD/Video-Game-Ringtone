@@ -1,26 +1,43 @@
 import { useEffect, useRef, useState } from 'react'
 import { DownloadIcon, ExternalIcon, PauseIcon, PlayIcon, SpinnerIcon } from './Icons.jsx'
 import { downloadFile, searchFreeAudio } from '../lib/freeAudio.js'
+import { hostName, modeOf } from '../data/sounds.js'
 
 export default function SoundCard({ sound, isPlaying, progress, onToggle }) {
-  const isFree = sound.kind === 'free'
+  const mode = modeOf(sound)
+  const isFree = mode === 'file'
   const [status, setStatus] = useState('')
+  const ext = sound.file?.match(/\.[a-z0-9]+$/i)?.[0] || '.mp3'
 
   return (
-    <article className={`card card--${sound.category.toLowerCase()}`}>
-      {isFree ? (
+    <article
+      className={`card card--${sound.category.toLowerCase()}`}
+      style={sound.color ? { '--tone': sound.color } : undefined}
+    >
+      {mode === 'file' && (
         <a
           className="card__download"
           href={sound.src}
-          download={`${sound.title}.mp3`}
+          download={`${sound.title}${ext}`}
           aria-label={`Download ${sound.title}`}
-          title="Download MP3"
+          title="Download"
         >
           <DownloadIcon />
         </a>
-      ) : (
-        <IconicDownload sound={sound} setStatus={setStatus} />
       )}
+      {mode === 'link' && (
+        <a
+          className="card__download"
+          href={sound.downloadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Download ${sound.title} from ${hostName(sound.downloadUrl)}`}
+          title={`Download from ${hostName(sound.downloadUrl)}`}
+        >
+          <DownloadIcon />
+        </a>
+      )}
+      {mode === 'search' && <IconicDownload sound={sound} setStatus={setStatus} />}
 
       <span className="card__tag">{sound.category}</span>
       <h3 className="card__title">{sound.title}</h3>
@@ -39,11 +56,11 @@ export default function SoundCard({ sound, isPlaying, progress, onToggle }) {
             <div className="card__progress" aria-hidden="true">
               <span style={{ width: `${isPlaying ? progress * 100 : 0}%` }} />
             </div>
-            <span className="card__meta">{sound.duration.toFixed(1)}s</span>
+            {sound.duration > 0 && <span className="card__meta">{sound.duration.toFixed(1)}s</span>}
           </>
         ) : (
           <span className="card__meta card__meta--source" role="status">
-            {status || `via ${sound.source.name}`}
+            {status || `via ${mode === 'link' ? hostName(sound.downloadUrl) : sound.sourceName || 'free sources'}`}
           </span>
         )}
       </footer>
@@ -59,16 +76,26 @@ function IconicDownload({ sound, setStatus }) {
   const controller = useRef(null)
   useEffect(() => () => controller.current?.abort(), [])
 
+  const fallBack = (reason) => {
+    if (!sound.sourceUrl) {
+      setState({ phase: 'idle' })
+      setStatus(reason)
+      return
+    }
+    const name = sound.sourceName || hostName(sound.sourceUrl)
+    setState({ phase: 'fallback', url: sound.sourceUrl, label: `Open ${name}` })
+    setStatus(`${reason} · try ${name}`)
+  }
+
   const run = async () => {
     const c = new AbortController()
     controller.current = c
     setState({ phase: 'searching' })
     setStatus('Searching free sources…')
     try {
-      const { match, failed } = await searchFreeAudio(sound.query, c.signal)
+      const { match, failed } = await searchFreeAudio(sound.query || sound.title, c.signal)
       if (!match) {
-        setState({ phase: 'fallback', url: sound.source.url, label: `Open ${sound.source.name}` })
-        setStatus(failed ? `Sources unreachable · try ${sound.source.name}` : `No free file found · try ${sound.source.name}`)
+        fallBack(failed ? 'Sources unreachable' : 'No free file found')
         return
       }
       setStatus(`Downloading from ${match.source}…`)
@@ -83,8 +110,7 @@ function IconicDownload({ sound, setStatus }) {
       }
     } catch {
       if (c.signal.aborted) return
-      setState({ phase: 'fallback', url: sound.source.url, label: `Open ${sound.source.name}` })
-      setStatus(`Search failed · try ${sound.source.name}`)
+      fallBack('Search failed')
     }
   }
 
